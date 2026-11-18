@@ -1,0 +1,20 @@
+{
+    "name": "MyScreen.Spill.Editor",
+    "rootNamespace": "MyScreen.Spill.Editor",
+    "references": [
+        "Unity.VisualScripting.Core",
+        "Unity.VisualScripting.Flow",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
