@@ -83,9 +83,8 @@ namespace MyScreen.Spill.Editor
                     continue;
                 }
                 Undo.RecordObject(m, "MyScreen Spill materials");
-                var queue = m.renderQueue;
+                // Only the shader changes: a material on its shader's own render queue (-1) stays on it.
                 m.shader = target;
-                m.renderQueue = queue;
                 EditorUtility.SetDirty(m);
                 done++;
             }

@@ -20,7 +20,7 @@ screen in your world as people move or resize it.
 Unity: **Window > Package Manager > + > Add package from git URL…**
 
 ```
-https://github.com/dukesvrtech/myscreen-spill.git#v0.1.0
+https://github.com/dukesvrtech/myscreen-spill.git#v0.1.1
 ```
 
 ## Set up a world (about five minutes)

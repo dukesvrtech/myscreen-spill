@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 (2026-11-18)
+
+- Converting materials changes only their shader: a material on its shader's own render queue stays on it (0.1.0
+  fixed it at the queue's number).
+
 ## 0.1.0 (2026-11-18)
 
 - `MyScreen/Lit Spill`: URP 17 Lit with MyScreen's spill in its forward pass.
