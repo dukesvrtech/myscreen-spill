@@ -19,6 +19,8 @@ namespace MyScreen.Spill.Editor
     ///     MyScreenSpillState    local position x = 1 for a 2D picture (0: half-SBS 3D), y = strength (1 normal)
     ///     MyScreenSpillHub      the graph: sets the spill's shader globals from the markers
     ///   MyScreenSpillScreen     where the light comes from: centre, facing (-Z is the front), scale = width x height
+    ///   MyScreenSpillScreen1-5  more screens (0.2): MyScreen puts one on each of its screens, up to 6 in all; a marker
+    ///                           scaled to nothing is off (new ones start that way)
     ///
     /// See README.md (for Unity and shader developers) and AGENTS.md (for AI assistants).
     /// </summary>
@@ -107,17 +109,33 @@ namespace MyScreen.Spill.Editor
             }
             Ensure(screen, objectId);
 
-            WireHub(hub, screen, state);
+            // The other screen slots (0.2), off until MyScreen puts them on its screens.
+            var more = new GameObject[MyScreenSpillGraph.Slots - 1];
+            for (var i = 1; i < MyScreenSpillGraph.Slots; i++)
+            {
+                var marker = FindRoot(scene, ScreenName + i);
+                if (marker == null)
+                {
+                    marker = Created(new GameObject(ScreenName + i));
+                    marker.transform.SetPositionAndRotation(screen.transform.position, screen.transform.rotation);
+                    marker.transform.localScale = Vector3.zero;
+                }
+                Ensure(marker, objectId);
+                more[i - 1] = marker;
+            }
+
+            WireHub(hub, screen, more, state);
             EditorSceneManager.MarkSceneDirty(scene);
             return screen;
         }
 
-        static void WireHub(GameObject hub, GameObject screen, GameObject state)
+        static void WireHub(GameObject hub, GameObject screen, GameObject[] more, GameObject state)
         {
             var variables = Component<Variables>(hub);
             Undo.RecordObject(variables, "MyScreen Spill hub");
             var decls = variables.declarations;
             decls.Set("Screen", screen);
+            for (var i = 0; i < more.Length; i++) decls.Set("Screen" + (i + 1), more[i]);
             decls.Set("State", state);
             decls.Set("Capture", AssetDatabase.LoadAssetAtPath<Texture>(CapturePath));
             if (!decls.IsDefined("Radius")) decls.Set("Radius", DefaultRadius);

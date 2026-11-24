@@ -5,9 +5,10 @@ using UnityEngine;
 namespace MyScreen.Spill.Editor
 {
     /// <summary>
-    /// The spill hub's Visual Scripting graph. At Start and every N frames it reads the rig's two markers and sets the
+    /// The spill hub's Visual Scripting graph. At Start and every N frames it reads the rig's markers and sets the
     /// spill's shader globals (MyScreenSpill.hlsl):
-    ///   Screen (MyScreenSpillScreen): position, right, up, -forward, lossyScale  -> centre, right/up + half sizes, normal
+    ///   Screen, Screen1 ... Screen5 (MyScreenSpillScreen, MyScreenSpillScreen1 ... 5): position, right, up, -forward,
+    ///     lossyScale -> each slot's centre, right/up + half sizes, normal (slot 0's globals have no suffix)
     ///   State  (MyScreenSpillState): localPosition x (2D), y (strength)          -> _MyScreenSpillFlat, x Intensity
     ///   Capture, Radius, Intensity, Mip (the hub's variables)                     -> the texture and the knobs
     /// Only members a Banter world graph may use: Shader.SetGlobal*, GameObject.transform, Transform's position, right,
@@ -42,29 +43,6 @@ namespace MyScreen.Spill.Editor
             g.controlConnections.Add(new ControlConnection(update.trigger, gate.enter));
             Connect(g, due.comparison, gate.condition);
 
-            // The screen marker.
-            var screen = Var(g, "Screen", new Vector2(-700, 320));
-            var tf = Get(g, typeof(GameObject), "transform", new Vector2(-500, 320));
-            Connect(g, screen.value, tf.target);
-            var pos = Get(g, typeof(Transform), "position", new Vector2(-300, 260));
-            var right = Get(g, typeof(Transform), "right", new Vector2(-300, 320));
-            var up = Get(g, typeof(Transform), "up", new Vector2(-300, 380));
-            var fwd = Get(g, typeof(Transform), "forward", new Vector2(-300, 440));
-            var scale = Get(g, typeof(Transform), "lossyScale", new Vector2(-300, 500));
-            foreach (var m in new[] { pos, right, up, fwd, scale }) Connect(g, tf.value, m.target);
-
-            var halfW = Half(g, scale, "x", new Vector2(-100, 500));
-            var halfH = Half(g, scale, "y", new Vector2(-100, 600));
-            var back = Add(g, new Vector3Multiply { position = new Vector2(-100, 440) });
-            var minusOne = Add(g, new Literal(typeof(Vector3), new Vector3(-1f, -1f, -1f)) { position = new Vector2(-300, 560) });
-            Connect(g, fwd.value, back.a);
-            Connect(g, minusOne.output, back.b);
-
-            var center = Vec4(g, pos.value, null, new Vector2(200, 240));
-            var rightW = Vec4(g, right.value, halfW, new Vector2(200, 420));
-            var upW = Vec4(g, up.value, halfH, new Vector2(200, 600));
-            var normal = Vec4(g, back.product, null, new Vector2(200, 780));
-
             // The state marker: x = flat, y = strength.
             var state = Var(g, "State", new Vector2(-700, 760));
             var stateTf = Get(g, typeof(GameObject), "transform", new Vector2(-500, 760));
@@ -97,11 +75,48 @@ namespace MyScreen.Spill.Editor
             last = SetFloat(g, last, "_MyScreenSpillIntensity", strength.product, 2);
             last = SetFloat(g, last, "_MyScreenSpillMip", mip.value, 3);
             last = SetFloat(g, last, "_MyScreenSpillFlat", flat.value, 4);
-            last = SetVector(g, last, "_MyScreenSpillCenter", center, 5);
-            last = SetVector(g, last, "_MyScreenSpillRight", rightW, 6);
-            last = SetVector(g, last, "_MyScreenSpillUp", upW, 7);
-            SetVector(g, last, "_MyScreenSpillNormal", normal, 8);
+            // Each screen slot: its marker's place into its four globals.
+            for (var slot = 0; slot < Slots; slot++)
+            {
+                var suffix = slot == 0 ? "" : slot.ToString();
+                var s = ScreenSlot(g, "Screen" + suffix, new Vector2(0, 1100 + slot * 1000));
+                var row = 5 + slot * 4;
+                last = SetVector(g, last, "_MyScreenSpillCenter" + suffix, s.center, row);
+                last = SetVector(g, last, "_MyScreenSpillRight" + suffix, s.rightW, row + 1);
+                last = SetVector(g, last, "_MyScreenSpillUp" + suffix, s.upW, row + 2);
+                last = SetVector(g, last, "_MyScreenSpillNormal" + suffix, s.normal, row + 3);
+            }
             return g;
+        }
+
+        /// <summary>The screen slots (MYSCREEN_SPILL_SLOTS in MyScreenSpill.hlsl).</summary>
+        public const int Slots = 6;
+
+        /// <summary>A screen marker's four values: centre, right + half width, up + half height, normal.</summary>
+        static (ValueOutput center, ValueOutput rightW, ValueOutput upW, ValueOutput normal) ScreenSlot(FlowGraph g, string variable, Vector2 at)
+        {
+            var screen = Var(g, variable, at + new Vector2(-700, 0));
+            var tf = Get(g, typeof(GameObject), "transform", at + new Vector2(-500, 0));
+            Connect(g, screen.value, tf.target);
+            var pos = Get(g, typeof(Transform), "position", at + new Vector2(-300, -60));
+            var right = Get(g, typeof(Transform), "right", at + new Vector2(-300, 0));
+            var up = Get(g, typeof(Transform), "up", at + new Vector2(-300, 60));
+            var fwd = Get(g, typeof(Transform), "forward", at + new Vector2(-300, 120));
+            var scale = Get(g, typeof(Transform), "lossyScale", at + new Vector2(-300, 180));
+            foreach (var m in new[] { pos, right, up, fwd, scale }) Connect(g, tf.value, m.target);
+
+            var halfW = Half(g, scale, "x", at + new Vector2(-100, 180));
+            var halfH = Half(g, scale, "y", at + new Vector2(-100, 280));
+            var back = Add(g, new Vector3Multiply { position = at + new Vector2(-100, 120) });
+            var minusOne = Add(g, new Literal(typeof(Vector3), new Vector3(-1f, -1f, -1f)) { position = at + new Vector2(-300, 240) });
+            Connect(g, fwd.value, back.a);
+            Connect(g, minusOne.output, back.b);
+
+            return (
+                Vec4(g, pos.value, null, at + new Vector2(200, -80)),
+                Vec4(g, right.value, halfW, at + new Vector2(200, 100)),
+                Vec4(g, up.value, halfH, at + new Vector2(200, 280)),
+                Vec4(g, back.product, null, at + new Vector2(200, 460)));
         }
 
         static T Add<T>(FlowGraph g, T unit) where T : IUnit

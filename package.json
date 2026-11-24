@@ -1,7 +1,7 @@
 {
   "name": "com.dukesvr.myscreen-spill",
   "displayName": "MyScreen Spill",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "unity": "6000.0",
   "description": "The light of a MyScreen TV or wall screen thrown onto your world, the way a cinema screen lights its seats: a URP Lit shader with the spill, and a rig that MyScreen drives at run time. For AltspaceVR (Banter) worlds.",
   "keywords": ["myscreen", "spill", "cinema", "urp", "shader", "altspacevr", "banter"],

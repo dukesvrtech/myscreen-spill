@@ -29,13 +29,15 @@ name** through their BS Object Id:
 |---|---|---|
 | `MyScreenSpillTarget` | adds a child plane (1.52 x 0.86 m, Unlit/Diffuse) showing the TV's picture (`asset_video_<id>`) | what the rig's camera films |
 | `MyScreenSpillScreen` (scene root) | local position = screen centre; local euler = (0, yaw, 0); local scale = (width m, height m, 1) | where the light comes from; **front is -Z** |
+| `MyScreenSpillScreen1` ... `5` (scene roots, 0.2) | the same, one per further screen; local scale (0, 0, 0) when the slot has no screen | more screens; scaled to nothing = off |
 | `MyScreenSpillState` (child of `MyScreenSpill`) | local position = (flat, strength, 0) | flat 1 = 2D picture, 0 = half-SBS 3D; strength 1 = normal |
 
-MyScreen picks the **biggest** MyScreen screen in the world (wall screens, else the TV), and moves the marker again when one
-moves or is resized. In the editor, the developer's placement of `MyScreenSpillScreen` only previews the light.
+MyScreen puts a marker on each of its screens in the world (the TV and its wall screens), up to 6, the biggest first, and
+moves them again when one moves or is resized. A rig with only `MyScreenSpillScreen` (0.1) gets the biggest screen.
+Overlapping light is MAX-blended in the shader, not summed. In the editor, the developer's placement of `MyScreenSpillScreen` only previews the light.
 
 The hub graph (`MyScreenSpill/MyScreenSpillHub`) runs at Start and every 10 frames. It reads the markers and its
-Variables (`Screen`, `State`, `Capture`, `Radius`, `Intensity`, `Mip`) and sets these shader globals:
+Variables (`Screen`, `Screen1` ... `Screen5`, `State`, `Capture`, `Radius`, `Intensity`, `Mip`) and sets these shader globals:
 
 ```
 _MyScreenSpillTex        Texture2D  the capture (MyScreenSpillCapture.renderTexture, 480x270, mips)
@@ -43,6 +45,8 @@ _MyScreenSpillCenter     float4     xyz = Screen.position
 _MyScreenSpillRight      float4     xyz = Screen.right,  w = |lossyScale.x| / 2
 _MyScreenSpillUp         float4     xyz = Screen.up,     w = |lossyScale.y| / 2
 _MyScreenSpillNormal     float4     xyz = -Screen.forward
+_MyScreenSpillCenter1..5, _MyScreenSpillRight1..5, _MyScreenSpillUp1..5, _MyScreenSpillNormal1..5
+                                    the same from Screen1 ... Screen5 (0.2; half sizes 0 = slot off)
 _MyScreenSpillRadius     float      Radius
 _MyScreenSpillIntensity  float      Intensity * State.localPosition.y
 _MyScreenSpillMip        float      Mip

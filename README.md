@@ -59,13 +59,14 @@ tuning.
 ```
  MyScreen (gateway script, at run time)
    ├─ puts the TV's picture on a plane under ── MyScreenSpillTarget
-   ├─ moves ─────────────────────────────────── MyScreenSpillScreen  (centre, yaw, width x height of the biggest screen)
+   ├─ moves ─────────────────────────────────── MyScreenSpillScreen, MyScreenSpillScreen1 ... 5
+   │                                            (centre, yaw, width x height: one per screen, up to 6)
    └─ sets ──────────────────────────────────── MyScreenSpillState   (x: 1 = 2D picture, 0 = half-SBS 3D; y: strength)
 
  MyScreenSpill rig (in your scene)
    MyScreenSpillCamera  films the target into MyScreenSpillCapture (480 x 270, with mips)
    MyScreenSpillHub     a Visual Scripting graph: at Start and every 10 frames, sets the shader globals
-                        from the two markers and its Variables
+                        from the markers and its Variables
 
  MyScreen/Lit Spill materials   read the globals and add the picture's light to the surface
 ```
